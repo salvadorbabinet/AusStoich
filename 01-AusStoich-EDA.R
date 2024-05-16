@@ -26,12 +26,21 @@ tidy_data
 # Species observation frequencies 
 species <- tidy_data |> 
   count(species_binom, sort = T) |> 
+  filter(species_binom != 'NA') |> 
   mutate(species_binom = fct(species_binom)) 
 
-species 
+species |> #All species
+  ggplot(aes(x = species_binom, y = n)) +
+  geom_col() + theme(axis.text.x = element_blank()) + 
+  labs(
+    title = 'Species observation frequency in AusTraits',
+    x = 'Species', y = 'Frequency'
+  )
 
-species |> 
-  filter(species_binom != 'NA' & n >= 30) |> 
+print(species, n = 30) 
+
+species |> #Only species above a given frequency threshold 
+  filter(n >= 30) |> 
   ggplot(aes(x = species_binom, y = n)) +
   geom_col() + theme(axis.text.x = element_text(angle = 90)) + 
   labs(
