@@ -1,6 +1,17 @@
 # AusStoich EDA 
-# Load useful libraries 
+# Libraries & functions
 library(tidyverse)
+
+# Takes tibble tb, variable x; returns factorized count table for x
+count_table <- function(tb, x) { 
+  tb |> 
+    count({{x}}, sort = T) |>
+    print(n = 1) |> 
+    filter({{x}} != 'NA') |> 
+    mutate(name = fct({{x}})) |> 
+    select(n:name) |> 
+    relocate(name)
+}
 
 # Import & tidy data as a tibble 
 raw_data <- read_csv('austraits_leaf_stoichiometry_MASTER_v1.0_10-05-2024.csv') 
@@ -24,18 +35,11 @@ tidy_data <- tidy_data |>
 tidy_data
 
 # Observation frequencies across taxa 
-count_table <- function(df, x) { 
-  df |> 
-    count({{x}}, sort = T) |> 
-    filter({{x}} != 'NA') |> 
-    mutate(name = fct({{x}})) |> 
-    select(n:name) |> 
-    relocate(name)
-}
-
 family <- count_table(tidy_data, family) 
-genus <- count_table(tidy_data, genus) #For reference, look into iterating across these
+genus <- count_table(tidy_data, genus) #TD - could iterate across these if relevant
 species <- count_table(tidy_data, species_binom) 
+
+print(species, n = 30) 
 
 species |> #All species
   ggplot(aes(x = name, y = n)) +
@@ -44,8 +48,6 @@ species |> #All species
     title = 'Species observation frequency in AusTraits',
     x = 'Species', y = 'Frequency'
   )
-
-print(species, n = 30) 
 
 species |> #Only species above a given frequency threshold 
   filter(n >= 30) |> 
@@ -59,5 +61,31 @@ species |> #Only species above a given frequency threshold
 # Variation 
 
 
-# Co-variation 
+# Transforms 
 
+
+# Co-variation - Note no data transforms yet 
+# Summarize ratios 
+tidy_data |> #TD - Convert to general summary function & iterate 
+  summarize(
+    np = mean(NP_ratio, na.rm = T), #TD - Use geometric means? Isles 2020
+    cn = mean(CN_ratio, na.rm = T),
+    cp = mean(CP_ratio, na.rm = T),
+    .by = woodiness
+  )
+
+# Example density curve 
+tidy_data |> ggplot(aes(x = CN_ratio, y = after_stat(density))) +
+  geom_freqpoly(aes(linetype = woodiness)) +
+  labs(
+    title = 'C:N density curve across woodiness levels',
+    x = 'C:N Ratio', y = 'Density'
+  )
+
+# Example scatter plot 
+tidy_data |> ggplot(aes(x = CN_ratio, y = CP_ratio)) +
+  geom_point(alpha = 0.5) +
+  labs(
+    title = 'Relationship between C:N & C:P across all samples',
+    x = 'C:N Ratio', y = 'C:P Ratio'
+  )
