@@ -23,14 +23,22 @@ tidy_data <- tidy_data |>
 
 tidy_data
 
-# Species observation frequencies 
-species <- tidy_data |> 
-  count(species_binom, sort = T) |> 
-  filter(species_binom != 'NA') |> 
-  mutate(species_binom = fct(species_binom)) 
+# Observation frequencies across taxa 
+count_table <- function(df, x) { 
+  df |> 
+    count({{x}}, sort = T) |> 
+    filter({{x}} != 'NA') |> 
+    mutate(name = fct({{x}})) |> 
+    select(n:name) |> 
+    relocate(name)
+}
+
+family <- count_table(tidy_data, family) 
+genus <- count_table(tidy_data, genus) #For reference, look into iterating across these
+species <- count_table(tidy_data, species_binom) 
 
 species |> #All species
-  ggplot(aes(x = species_binom, y = n)) +
+  ggplot(aes(x = name, y = n)) +
   geom_col() + theme(axis.text.x = element_blank()) + 
   labs(
     title = 'Species observation frequency in AusTraits',
@@ -41,9 +49,15 @@ print(species, n = 30)
 
 species |> #Only species above a given frequency threshold 
   filter(n >= 30) |> 
-  ggplot(aes(x = species_binom, y = n)) +
+  ggplot(aes(x = name, y = n)) +
   geom_col() + theme(axis.text.x = element_text(angle = 90)) + 
   labs(
     title = 'Species observation frequency in AusTraits (n > 30)',
     x = 'Species', y = 'Frequency'
     )
+
+# Variation 
+
+
+# Co-variation 
+
