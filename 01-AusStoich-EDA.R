@@ -2,18 +2,23 @@
 # Libraries & functions
 library(tidyverse)
 
+# Takes tibble tb, variable x; returns number of missing values (for reference)
+count_NA <- function(tb, x) {
+  tb |> 
+    filter(is.na({{x}})) |> 
+    count({{x}})
+}
+
 # Takes tibble tb, variable x; returns factorized count table for x
 count_table <- function(tb, x) { 
   tb |> 
     count({{x}}, sort = T) |>
-    print(n = 1) |> 
     filter({{x}} != 'NA') |> 
     mutate(name = fct({{x}})) |> 
-    select(n:name) |> 
-    relocate(name)
+    select(n:name) |> relocate(name)
 }
 
-# Import & tidy data as a tibble 
+# Import & tidy data as tibble 
 raw_data <- read_csv('austraits_leaf_stoichiometry_MASTER_v1.0_10-05-2024.csv') 
 raw_data #For reference
 
@@ -29,7 +34,8 @@ tidy_data <- read_csv(
   )
 
 tidy_data <- tidy_data |> 
-  select(Unique_ID:CP_ratio) |> 
+  select(Unique_ID:LATLONG) |> 
+  filter(!is.na(Unique_ID)) |> 
   relocate(species_binom, .after = genus) 
 
 tidy_data
@@ -39,7 +45,7 @@ family <- count_table(tidy_data, family)
 genus <- count_table(tidy_data, genus) #TD - could iterate across these if relevant
 species <- count_table(tidy_data, species_binom) 
 
-print(species, n = 30) 
+print(species, n = 20) 
 
 species |> #All species
   ggplot(aes(x = name, y = n)) +
@@ -59,7 +65,13 @@ species |> #Only species above a given frequency threshold
     )
 
 # Variation 
+tidy_data |> ggplot(aes(x = leaf_N_per_dry_mass)) +
+  geom_histogram()
 
+outliers_n <- tidy_data |> 
+  filter(leaf_N_per_dry_mass > 50) |> 
+  arrange(desc(leaf_N_per_dry_mass))
+View(outliers_n)
 
 # Transforms 
 
@@ -84,8 +96,9 @@ tidy_data |> ggplot(aes(x = CN_ratio, y = after_stat(density))) +
 
 # Example scatter plot 
 tidy_data |> ggplot(aes(x = CN_ratio, y = CP_ratio)) +
-  geom_point(alpha = 0.5) +
+  geom_point(alpha = 0.4) +
   labs(
     title = 'Relationship between C:N & C:P across all samples',
     x = 'C:N Ratio', y = 'C:P Ratio'
   )
+
