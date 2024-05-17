@@ -18,7 +18,8 @@ count_table <- function(tb, x) {
     select(n:name) |> relocate(name)
 }
 
-# Import & tidy data as tibble 
+
+# Data import & tidying ---------------------------------------------------
 raw_data <- read_csv('austraits_leaf_stoichiometry_MASTER_v1.0_10-05-2024.csv') 
 raw_data #For reference
 
@@ -40,9 +41,10 @@ tidy_data <- tidy_data |>
 
 tidy_data
 
-# Observation frequencies across taxa 
+
+# Observation frequencies across taxa -------------------------------------
 family <- count_table(tidy_data, family) 
-genus <- count_table(tidy_data, genus) #TD - could iterate across these if relevant
+genus <- count_table(tidy_data, genus) 
 species <- count_table(tidy_data, species_binom) 
 
 print(species, n = 20) 
@@ -64,19 +66,36 @@ species |> #Only species above a given frequency threshold
     x = 'Species', y = 'Frequency'
     )
 
-# Variation 
+
+# Variation ---------------------------------------------------------------
 tidy_data |> ggplot(aes(x = leaf_N_per_dry_mass)) +
-  geom_histogram()
+  geom_histogram(bins = 80) +
+  labs(
+    title = 'Foliar N concentration across all samples',
+    x = 'Foliar N per dry mass', y = 'Frequency'
+  )
+
+tidy_data |> ggplot(aes(x = leaf_P_per_dry_mass)) +
+  geom_histogram(bins = 80) +
+  labs(
+    title = 'Foliar P concentration across all samples',
+    x = 'Foliar P per dry mass', y = 'Frequency'
+  )
+
+tidy_data |> ggplot(aes(x = leaf_C_per_dry_mass)) +
+  geom_histogram(bins = 80) +
+  labs(
+    title = 'Foliar C concentration across all samples',
+    x = 'Foliar C per dry mass', y = 'Frequency'
+  )
 
 outliers_n <- tidy_data |> 
   filter(leaf_N_per_dry_mass > 50) |> 
-  arrange(desc(leaf_N_per_dry_mass))
-View(outliers_n)
-
-# Transforms 
+  arrange(desc(leaf_N_per_dry_mass)) 
+View(outliers_n) 
 
 
-# Co-variation - Note no data transforms yet 
+# Co-variation ------------------------------------------------------------
 # Summarize ratios 
 tidy_data |> #TD - Convert to general summary function & iterate 
   summarize(
