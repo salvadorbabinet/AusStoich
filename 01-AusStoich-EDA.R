@@ -92,6 +92,23 @@ species |> #Observation density within a given frequency range
     x = 'Number of observations', y = 'Density'
   )
 
+# Spatial distribution 
+# All species
+australia <- map_data('world', region = 'australia') |> filter(long < 155)
+
+ggplot() +
+  geom_polygon(
+    data = australia, 
+    aes(x = long, y = lat, group = group), 
+    fill = 'white', color = 'black'
+    ) + 
+  coord_quickmap() +
+  geom_point(
+    data = tidy_data, 
+    aes(x = long_deg, y = lat_deg), 
+    alpha = 0.1
+    ) 
+
 # Other factors 
 tidy_data |> count(woodiness) 
 tidy_data |> summarize_cont(leaf_C_per_dry_mass, grouping = woodiness) 
