@@ -2,14 +2,7 @@
 # Libraries & functions
 library(tidyverse)
 
-# Takes tibble tb, variable x; returns number of missing values (for reference)
-count_NA <- function(tb, x) {
-  tb |> 
-    filter(is.na({{x}})) |> 
-    count({{x}})
-}
-
-# Takes tibble tb, variable x; returns factorized count table for x
+# Takes tibble tb, categorical variable x; returns factorized count table for levels of x
 count_table <- function(tb, x) { 
   tb |> 
     count({{x}}, sort = T) |>
@@ -18,6 +11,20 @@ count_table <- function(tb, x) {
     select(n:name) |> relocate(name)
 }
 
+# Takes tibble tb, continuous variable x, (optional) grouping; returns summary stats 
+summarize_cont <- function(tb, x, grouping = NULL) {
+  tb |> summarize(
+    min = min({{x}}, na.rm = T),
+    median = median({{x}}, na.rm = T),
+    mean = mean({{x}}, na.rm = T),
+    var = var({{x}}, na.rm = T), 
+    sd = sd({{x}}, na.rm = T), 
+    max = max({{x}}, na.rm = T), 
+    n = n(), 
+    is_NA = sum(is.na({{x}})),
+    .by = {{grouping}}
+  )
+}
 
 # Data import & tidying ---------------------------------------------------
 raw_data <- read_csv('austraits_leaf_stoichiometry_MASTER_v1.0_10-05-2024.csv') 
@@ -42,12 +49,16 @@ tidy_data <- tidy_data |>
 tidy_data
 
 
-# Observation frequencies across taxa -------------------------------------
-family <- count_table(tidy_data, family) 
-genus <- count_table(tidy_data, genus) 
+# Data structure  ---------------------------------------------------------
+# Observation frequencies across taxa 
 species <- count_table(tidy_data, species_binom) 
+species
 
-print(species, n = 20) 
+genus <- count_table(tidy_data, genus)
+genus
+
+family <- count_table(tidy_data, family)
+family 
 
 species |> #All species
   ggplot(aes(x = name, y = n)) +
@@ -66,22 +77,12 @@ species |> #Only species above a given frequency threshold
     x = 'Species', y = 'Frequency'
     )
 
+# Other factors 
+tidy_data |> count(woodiness) 
+tidy_data |> summarize_cont(leaf_C_per_dry_mass, grouping = woodiness) 
 
 # Variation ---------------------------------------------------------------
-tidy_data |> ggplot(aes(x = leaf_N_per_dry_mass)) +
-  geom_histogram(bins = 80) +
-  labs(
-    title = 'Foliar N concentration across all samples',
-    x = 'Foliar N per dry mass', y = 'Frequency'
-  )
-
-tidy_data |> ggplot(aes(x = leaf_P_per_dry_mass)) +
-  geom_histogram(bins = 80) +
-  labs(
-    title = 'Foliar P concentration across all samples',
-    x = 'Foliar P per dry mass', y = 'Frequency'
-  )
-
+# Foliar carbon 
 tidy_data |> ggplot(aes(x = leaf_C_per_dry_mass)) +
   geom_histogram(bins = 80) +
   labs(
@@ -89,22 +90,44 @@ tidy_data |> ggplot(aes(x = leaf_C_per_dry_mass)) +
     x = 'Foliar C per dry mass', y = 'Frequency'
   )
 
-outliers_n <- tidy_data |> 
-  filter(leaf_N_per_dry_mass > 50) |> 
-  arrange(desc(leaf_N_per_dry_mass)) 
-View(outliers_n) 
+summarize_cont(tidy_data, leaf_C_per_dry_mass)
+
+# Foliar nitrogen 
+tidy_data |> ggplot(aes(x = leaf_N_per_dry_mass)) +
+  geom_histogram(bins = 80) +
+  labs(
+    title = 'Foliar N concentration across all samples',
+    x = 'Foliar N per dry mass', y = 'Frequency'
+  )
+
+summarize_cont(tidy_data, leaf_N_per_dry_mass)
+
+# outliers_N <- tidy_data |> 
+#   filter(leaf_N_per_dry_mass > 50) |> 
+#   arrange(desc(leaf_N_per_dry_mass)) 
+
+# Foliar phosphorus 
+tidy_data |> ggplot(aes(x = leaf_P_per_dry_mass)) +
+  geom_histogram(bins = 80) +
+  labs(
+    title = 'Foliar P concentration across all samples',
+    x = 'Foliar P per dry mass', y = 'Frequency'
+  )
+
+summarize_cont(tidy_data, leaf_P_per_dry_mass)
+
+# Stoichiometry distributions 
+tidy_data |> ggplot(aes(x = CN_ratio)) +
+  geom_histogram(bins = 60)
+
+tidy_data |> ggplot(aes(x = NP_ratio)) +
+  geom_histogram(bins = 60)
+
+tidy_data |> ggplot(aes(x = CP_ratio)) +
+  geom_histogram(bins = 60)
 
 
 # Co-variation ------------------------------------------------------------
-# Summarize ratios 
-tidy_data |> #TD - Convert to general summary function & iterate 
-  summarize(
-    np = mean(NP_ratio, na.rm = T), #TD - Use geometric means? Isles 2020
-    cn = mean(CN_ratio, na.rm = T),
-    cp = mean(CP_ratio, na.rm = T),
-    .by = woodiness
-  )
-
 # Example density curve 
 tidy_data |> ggplot(aes(x = CN_ratio, y = after_stat(density))) +
   geom_freqpoly(aes(linetype = woodiness)) +
