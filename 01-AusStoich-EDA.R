@@ -49,7 +49,7 @@ tidy_data <- tidy_data |>
 tidy_data
 
 
-# Data structure  ---------------------------------------------------------
+# Structure  ---------------------------------------------------------
 # Observation frequencies across taxa 
 species <- count_table(tidy_data, species_binom) 
 species
@@ -76,6 +76,21 @@ species |> #Only species above a given frequency threshold
     title = 'Species observation frequency in AusTraits (n > 30)',
     x = 'Species', y = 'Frequency'
     )
+
+species |> ggplot(aes(x = n)) +
+  geom_density() +
+  labs(
+    title = 'Density of species observations in Austraits',
+    x = 'Number of observations', y = 'Density'
+  )
+
+species |> #Observation density within a given frequency range 
+  filter(n > 10 & n < 100) |> 
+  ggplot(aes(x = n)) + geom_density() +
+  labs(
+    title = 'Density of species observations in Austraits (100 > n > 10)',
+    x = 'Number of observations', y = 'Density'
+  )
 
 # Other factors 
 tidy_data |> count(woodiness) 
