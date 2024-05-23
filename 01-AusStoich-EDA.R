@@ -1,5 +1,6 @@
 # AusStoich EDA 
 # Libraries & functions
+library(ape)
 library(tidyverse)
 
 # Takes tibble tb, categorical variable x; returns factorized count table for levels of x
@@ -46,9 +47,15 @@ tidy_data <- tidy_data |>
   filter(!is.na(Unique_ID)) |> 
   relocate(species_binom, .after = genus) 
 
-tidy_data
+tidy_data 
 
-
+# Phylogeny (this is not yet implemented properly)
+tree <- read.tree('ITS_tree.tre')
+tree_species <- 
+  tibble(tree[["treeTREE1="]][["tip.label"]]) |> 
+  rename(species_in_tree = 'tree[["treeTREE1="]][["tip.label"]]')
+  
+  
 # Structure  ---------------------------------------------------------
 # Observation frequencies across taxa 
 species <- count_table(tidy_data, species_binom) 
@@ -77,7 +84,8 @@ species |> #Only species above a given frequency threshold
     x = 'Species', y = 'Frequency'
     )
 
-species |> ggplot(aes(x = n)) +
+species |> #Observation density for all species 
+  ggplot(aes(x = n)) +
   geom_density() +
   labs(
     title = 'Density of species observations in Austraits',
@@ -95,7 +103,6 @@ species |> #Observation density within a given frequency range
 # Spatial distribution 
 # All species
 australia <- map_data('world', region = 'australia') |> filter(long < 155)
-
 ggplot() +
   geom_polygon(
     data = australia, 
@@ -103,15 +110,16 @@ ggplot() +
     fill = 'white', color = 'black'
     ) + 
   coord_quickmap() +
-  geom_point(
+  geom_point( #Bin by species frequency? 
     data = tidy_data, 
-    aes(x = long_deg, y = lat_deg), 
+    aes(x = long_deg, y = lat_deg),
     alpha = 0.1
     ) 
 
 # Other factors 
-tidy_data |> count(woodiness) 
-tidy_data |> summarize_cont(leaf_C_per_dry_mass, grouping = woodiness) 
+tidy_data |> count(woodiness)
+tidy_data |> count(across(woodiness:putative_BNF)) 
+
 
 # Variation ---------------------------------------------------------------
 # Foliar carbon 
@@ -160,6 +168,9 @@ tidy_data |> ggplot(aes(x = CP_ratio)) +
 
 
 # Co-variation ------------------------------------------------------------
+# Example grouped stats 
+tidy_data |> summarize_cont(leaf_C_per_dry_mass, grouping = woodiness) 
+
 # Example density curve 
 tidy_data |> ggplot(aes(x = CN_ratio, y = after_stat(density))) +
   geom_freqpoly(aes(linetype = woodiness)) +
