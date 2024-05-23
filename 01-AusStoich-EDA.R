@@ -110,11 +110,15 @@ ggplot() +
     fill = 'white', color = 'black'
     ) + 
   coord_quickmap() +
-  geom_point( #Bin by species frequency? 
+  geom_jitter( #Bin by species frequency? 
     data = tidy_data, 
     aes(x = long_deg, y = lat_deg),
     alpha = 0.1
-    ) 
+    ) +
+  labs(
+    title = 'Spatial distribution of observations in AusTraits',
+    x = 'Longitude', y = 'Latitude'
+  )
 
 # Other factors 
 tidy_data |> count(woodiness)
@@ -177,6 +181,15 @@ tidy_data |> ggplot(aes(x = CN_ratio, y = after_stat(density))) +
   labs(
     title = 'C:N density curve across woodiness levels',
     x = 'C:N Ratio', y = 'Density'
+  )
+
+#Example box plot 
+tidy_data |> filter(!is.na(woodiness)) |> 
+  ggplot(aes(x = woodiness, y = CN_ratio)) +
+  geom_boxplot() +
+  labs(
+    title = 'C:N ratio across woodiness levels',
+    x = 'Woodiness', y = 'C:N Ratio'
   )
 
 # Example scatter plot 
